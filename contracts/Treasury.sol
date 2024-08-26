@@ -13,11 +13,14 @@ contract Treasury is IErrors, ITreasury {
         simpleDexAddress = simpleDEX;
     }
 
-    receive() payable external {}
+    /**
+     * @dev token sent to the treasury stay in the treasury
+     */
+    receive() external payable {}
 
     modifier onlySimpleDEX() {
         // require(msg.sender == sempleDexAddress, "not a simple DEX");
-        if(msg.sender != simpleDexAddress) {
+        if (msg.sender != simpleDexAddress) {
             revert notSimpleDEX();
         }
         _;

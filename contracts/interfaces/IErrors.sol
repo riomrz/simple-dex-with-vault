@@ -8,6 +8,7 @@ interface IErrors {
     error notEnoughBalance();
     error invalidAddress();
     error invalidTreasuryAddress();
+    error invalidVaultAddress();
     error invalidAmount();
     error invalidUserBalance();
 }

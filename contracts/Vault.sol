@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IVault.sol";
 
-
-contract Vault is Initializable {
-    IERC20Upgradeable public token;
+contract Vault is IVault {
+    IERC20 public token;
 
     uint public totalSupply;
     mapping(address => uint) public balanceOf;
 
     // uint public shares
 
-    function initialize(address _token) public initializer() {
-        token = IERC20Upgradeable(_token);
+    constructor(address _token) {
+        token = IERC20(_token);
     }
+
+    /* function initialize(address _token) public initializer {
+        token = IERC20(_token);
+    } */
 
     function _mint(address _to, uint _shares) private {
         totalSupply += _shares;
@@ -42,7 +45,7 @@ contract Vault is Initializable {
         if (totalSupply == 0) {
             shares = _amount;
         } else {
-            shares = (_amount*totalSupply) / token.balanceOf(address(this));
+            shares = (_amount * totalSupply) / token.balanceOf(address(this));
         }
 
         _mint(msg.sender, shares);
@@ -60,7 +63,7 @@ contract Vault is Initializable {
 
         a = sB / T
         */
-        uint amount = (_shares*token.balanceOf(address(this))) / totalSupply;
+        uint amount = (_shares * token.balanceOf(address(this))) / totalSupply;
         _burn(msg.sender, _shares);
         token.transfer(msg.sender, amount);
     }
