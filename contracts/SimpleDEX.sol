@@ -7,6 +7,8 @@ import "./PriceConsumer.sol";
 import "./interfaces/IErrors.sol";
 import "./interfaces/IToken.sol";
 import "./interfaces/IVault.sol";
+import {console} from "hardhat/console.sol";
+
 
 contract SimpleDEX is Ownable, IErrors {
     address public token;
@@ -49,12 +51,12 @@ contract SimpleDEX is Ownable, IErrors {
      * @param _to receiver address
      * @param _amount eth amount
      */
-    /* function treasuryMovs(address _to, uint256 _amount) internal {
-        (bool sent, ) = payable(_to).call{value: _amount}("");
+    function vaultMovs(address _to, uint256 _amount) internal {
+        (bool sent, ) = payable(_to).call{value: _amount}(""); // needed to transfer ether
         if (!sent) {
             revert ethNotSent();
         }
-    } */
+    }
 
     /**
      * @dev ETH to token exchange
@@ -71,10 +73,7 @@ contract SimpleDEX is Ownable, IErrors {
         ethPrice = uint256(ethUsdContract.getLatestPrice());
         uint amountToSend = (amountToBuy * ethPrice) / (10 ** ethPriceDecimals);
 
-        // FIXME: Send ETH to Vault or only the token minted? Maybe send ETH to Treasury and token to Vault
-        // vaultMovs(externalVault, amountToBuy);
-        tx = await assetContract.approve(externalVault.address, toWei(100000), {from:msg.sender})
-        IVault(externalVault).deposit(amountToBuy);
+        vaultMovs(externalVault, amountToBuy);
 
         // Mint Token on the sender address
         IToken(token).mint(msg.sender, amountToSend);
@@ -83,8 +82,8 @@ contract SimpleDEX is Ownable, IErrors {
     }
 
     /**
-     * @dev shares to ETH exchange
-     * @param amount shares amount
+     * @dev token to ETH exchange
+     * @param amount token amount
      */
     function sellToken(uint256 amount) public {
         if (amount == 0) {
@@ -95,17 +94,19 @@ contract SimpleDEX is Ownable, IErrors {
         }
 
         ethPrice = uint256(ethUsdContract.getLatestPrice());
-        // uint256 amountToSend = (amount * (10 ** ethPriceDecimals)) / ethPrice;
+        uint256 amountToSend = (amount * (10 ** ethPriceDecimals)) / ethPrice;
 
         IToken(token).burn(msg.sender, amount);
 
         // FIXME: externalVault.totalSupply?
-        if (address(externalVault).balance < amount) {
+        console.log("-- address(externalVault).balance: ", address(externalVault).balance);
+        console.log("-- amountToSend: ", amountToSend);
+        if (address(externalVault).balance < amountToSend) {
             revert notEnoughBalance();
         }
 
         // vaultMovs(msg.sender, amountToSend);
-        IVault(externalVault).withdraw(amount);
+        IVault(externalVault).withdraw(amountToSend);
 
         emit Sold(amount);
     }

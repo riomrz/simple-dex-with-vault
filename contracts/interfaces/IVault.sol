@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 interface IVault {
-    function deposit(uint _amount) external;
+    function deposit(uint256 _amount) external;
 
     function withdraw(uint _shares) external;
 }

@@ -46,7 +46,7 @@ describe('Simple DEX', function (accounts) {
         expect(treasury.address).to.match((/0x[0-9a-fA-F]{40}/)); */
 
         const Vault = await hre.ethers.getContractFactory("Vault")
-        vault = await Vault.deploy(token.address);
+        vault = await Vault.deploy(simpleDex.address);
         console.log('Vault Deployed: ', vault.address);
     });
 
@@ -66,46 +66,45 @@ describe('Simple DEX', function (accounts) {
     it("users change ethers for tokens in SimpleDEX", async function () {
         tx = await simpleDex.connect(other1).buyToken({ value: toWei(1) })
         console.log("ETH/USD price: " + fromWei8Dec(await simpleDex.ethPrice()))
-        tx = await simpleDex.connect(other2).buyToken({ value: toWei(1.5) })
-        tx = await simpleDex.connect(other3).buyToken({ value: toWei(2) })
+        // tx = await simpleDex.connect(other2).buyToken({ value: toWei(1.5) })
+        // tx = await simpleDex.connect(other3).buyToken({ value: toWei(2) })
     })
 
     it("SimpleDEX parameters", async function () {
-        console.log("Token balance in dex contract: " + fromWei(await token.balanceOf(simpleDex.address)))
-        console.log("Ether balance in dex contract: " + fromWei(await simpleDex.provider.getBalance(simpleDex.address)))
+        console.log("Token balance in dex contract (has to be 0): " + fromWei(await token.balanceOf(simpleDex.address)))
+        console.log("Ether balance in dex contract (has to be 0): " + fromWei(await simpleDex.provider.getBalance(simpleDex.address)))
         
-        console.log("Token balance in Vault contract: " + fromWei(await token.balanceOf(vault.address)))
         console.log("Ether balance in Vault contract: " + fromWei(await vault.provider.getBalance(vault.address)))
 
         console.log("other1 Token balance: " + fromWei(await token.balanceOf(other1.address)))
-        console.log("other2 Token balance: " + fromWei(await token.balanceOf(other2.address)))
-        console.log("other3 Token balance: " + fromWei(await token.balanceOf(other3.address)))
+        // console.log("other2 Token balance: " + fromWei(await token.balanceOf(other2.address)))
+        // console.log("other3 Token balance: " + fromWei(await token.balanceOf(other3.address)))
         // console.log("ETH balance in Treasury contract: " + fromWei(await treasury.provider.getBalance(treasury.address)))
 
         console.log("Other1 ETH balance: " + fromWei(await other1.provider.getBalance(other1.address)))
-        console.log("Other2 ETH balance: " + fromWei(await other2.provider.getBalance(other2.address)))
-        console.log("Other3 ETH balance: " + fromWei(await other3.provider.getBalance(other3.address)))
+        // console.log("Other2 ETH balance: " + fromWei(await other2.provider.getBalance(other2.address)))
+        // console.log("Other3 ETH balance: " + fromWei(await other3.provider.getBalance(other3.address)))
     })
 
-    /* it("users withdraw tokens for ethers in SimpleDEX", async function () {
+    it("users withdraw tokens for ethers in SimpleDEX", async function () {
         tx = await simpleDex.connect(other1).sellToken(toWei(1000))
-
-        tx = await simpleDex.connect(other2).sellToken(toWei(800))
-
-        tx = await simpleDex.connect(other3).sellToken(toWei(1200))
+        // tx = await simpleDex.connect(other2).sellToken(toWei(800))
+        // tx = await simpleDex.connect(other3).sellToken(toWei(1200))
     })
 
     it("SimpleDEX parameters", async function () {
-        console.log("Token balance in dex contract: " + fromWei(await token.balanceOf(simpleDex.address)))
-        console.log("ether balance in dex contract: " + fromWei(await simpleDex.provider.getBalance(simpleDex.address)))
+        console.log("Token balance in dex contract (has to be 0): " + fromWei(await token.balanceOf(simpleDex.address)))
+        console.log("Ether balance in dex contract (has to be 0): " + fromWei(await simpleDex.provider.getBalance(simpleDex.address)))
+
+        console.log("Ether balance in Vault contract: " + fromWei(await vault.provider.getBalance(vault.address)))
 
         console.log("other1 Token balance: " + fromWei(await token.balanceOf(other1.address)))
-        console.log("other2 Token balance: " + fromWei(await token.balanceOf(other2.address)))
-        console.log("other3 Token balance: " + fromWei(await token.balanceOf(other3.address)))
-        console.log("Vault shares balance in Vault contract: " + vault.totalSupply)
+        // console.log("other2 Token balance: " + fromWei(await token.balanceOf(other2.address)))
+        // console.log("other3 Token balance: " + fromWei(await token.balanceOf(other3.address)))
+        // console.log("ETH balance in Treasury contract: " + fromWei(await treasury.provider.getBalance(treasury.address)))
 
         console.log("Other1 ETH balance: " + fromWei(await other1.provider.getBalance(other1.address)))
-        console.log("Other2 ETH balance: " + fromWei(await other2.provider.getBalance(other2.address)))
-        console.log("Other3 ETH balance: " + fromWei(await other3.provider.getBalance(other3.address)))
-    }) */
+        // console.log("Other2 ETH balance: " + fromWei(await other2.provider.getBalance(other2.address)))
+        // console.log("Other3 ETH balance: " + fromWei(await other3.provider.getBalance(other3.address)))
+    })
 })
