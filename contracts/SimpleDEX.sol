@@ -7,7 +7,6 @@ import "./PriceConsumer.sol";
 import "./interfaces/IErrors.sol";
 import "./interfaces/IToken.sol";
 import "./interfaces/IVault.sol";
-import {console} from "hardhat/console.sol";
 
 
 contract SimpleDEX is Ownable, IErrors {
@@ -18,8 +17,8 @@ contract SimpleDEX is Ownable, IErrors {
     uint256 public ethPriceDecimals;
     uint256 public ethPrice;
 
-    event Bought(uint256 amount);
-    event Sold(uint256 amount);
+    event Bought(uint256 tokenAmountToBuy);
+    event Sold(uint256 tokenAmountToBuy);
 
     constructor(address _token, address oracleEthUsdPrice) {
         token = _token;
@@ -49,65 +48,65 @@ contract SimpleDEX is Ownable, IErrors {
     /**
      * @notice transfer ETH to vault
      * @param _to receiver address
-     * @param _amount eth amount
+     * @param _amount eth tokenAmountToBuy
      */
     function vaultMovs(address _to, uint256 _amount) internal {
-        (bool sent, ) = payable(_to).call{value: _amount}(""); // needed to transfer ether
+        (bool sent, ) = payable(_to).call{value: _amount}("");
         if (!sent) {
             revert ethNotSent();
         }
     }
 
     /**
-     * @dev ETH to token exchange
+     * @dev ETH to token exchange: ETH are sent to the Vault and tokens are minted on the receiver address
      */
     function buyToken() public payable {
         if (externalVault == address(0)) {
             revert invalidVaultAddress();
         }
-        uint256 amountToBuy = msg.value;
-        if (amountToBuy == 0) {
+        uint256 ethAmountToBuy = msg.value;
+        if (ethAmountToBuy == 0) {
             revert invalidAmount();
         }
 
         ethPrice = uint256(ethUsdContract.getLatestPrice());
-        uint amountToSend = (amountToBuy * ethPrice) / (10 ** ethPriceDecimals);
+        uint tokenAmountToSend = (ethAmountToBuy * ethPrice) / (10 ** ethPriceDecimals);
 
-        vaultMovs(externalVault, amountToBuy);
+        // ETH received are sent to Vault which calls the deposit() method
+        vaultMovs(externalVault, ethAmountToBuy);
 
         // Mint Token on the sender address
-        IToken(token).mint(msg.sender, amountToSend);
+        IToken(token).mint(msg.sender, tokenAmountToSend);
 
-        emit Bought(amountToSend);
+        emit Bought(tokenAmountToSend);
     }
 
     /**
-     * @dev token to ETH exchange
-     * @param amount token amount
+     * @dev token to ETH exchange: token are burned on the sender address and ETH are withdrawn from the Vault based on shares
+     * @param tokenAmountToBuy token tokenAmountToBuy
      */
-    function sellToken(uint256 amount) public {
-        if (amount == 0) {
+    function sellToken(uint256 tokenAmountToBuy) public {
+        if (tokenAmountToBuy == 0) {
             revert invalidAmount();
         }
-        if (IERC20(token).balanceOf(msg.sender) < amount) {
+        if (IERC20(token).balanceOf(msg.sender) < tokenAmountToBuy) {
             revert invalidUserBalance();
         }
 
         ethPrice = uint256(ethUsdContract.getLatestPrice());
-        uint256 amountToSend = (amount * (10 ** ethPriceDecimals)) / ethPrice;
+        uint256 ethAmountToSend = (tokenAmountToBuy * (10 ** ethPriceDecimals)) / ethPrice;
 
-        IToken(token).burn(msg.sender, amount);
-
-        // FIXME: externalVault.totalSupply?
-        console.log("-- address(externalVault).balance: ", address(externalVault).balance);
-        console.log("-- amountToSend: ", amountToSend);
-        if (address(externalVault).balance < amountToSend) {
+        if (address(externalVault).balance < ethAmountToSend) {
             revert notEnoughBalance();
         }
 
-        // vaultMovs(msg.sender, amountToSend);
-        IVault(externalVault).withdraw(amountToSend);
+        // Burn Token on the sender address
+        IToken(token).burn(msg.sender, tokenAmountToBuy);
 
-        emit Sold(amount);
+        // Calculate share and withdraw from Vault
+        uint shares = IVault(externalVault).calculateShares(ethAmountToSend);
+        IVault(externalVault).withdraw(msg.sender, shares);
+
+        emit Sold(tokenAmountToBuy);
     }
 }
